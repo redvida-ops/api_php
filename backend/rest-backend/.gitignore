@@ -1,5 +1,4 @@
-
-###> symfony/framework-bundle ###
+###> Symfony ###
 /.env.local
 /.env.local.php
 /.env.*.local
@@ -7,4 +6,27 @@
 /public/bundles/
 /var/
 /vendor/
-###< symfony/framework-bundle ###
+###< Symfony ###
+
+###> PHP ###
+/public/uploads/
+###< PHP ###
+
+###> Node ###
+/node_modules/
+/public/build/
+npm-debug.log
+yarn-error.log
+###< Node ###
+
+###> IDE ###
+/.idea/
+/.vscode/
+*.swp
+*.swo
+###< IDE ###
+
+###> OS ###
+.DS_Store
+Thumbs.db
+###< OS ###

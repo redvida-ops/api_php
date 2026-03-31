@@ -95,20 +95,23 @@ class MenuCommand extends Command
         }
 
         $io->success('Bienvenido ' . $usuario->getNombre() . ' ' . $usuario->getApellido() . '!');
-        $this->menuUsuario($io);
+        $this->menuUsuario($io, $usuario);
     }
 
-    private function menuUsuario(SymfonyStyle $io): void
+    private function menuUsuario(SymfonyStyle $io, Usuarios $usuario): void
     {
         while (true) {
             $io->title('MENU PRINCIPAL');
             $io->writeln('[1] Ver Productos');
-            $io->writeln('[2] Salir');
+            $io->writeln('[2] Agregar Producto');
+            $io->writeln('[3] Salir');
             $io->writeln('');
             $opcion = $io->ask('Selecciona una Opcion');
 
             if ($opcion === '1') {
                 $this->verProductos($io);
+            } elseif ($opcion === '2') {
+                $this->agregarProducto($io);
             } else {
                 $io->success('Hasta Luego!');
                 return;
@@ -121,10 +124,53 @@ class MenuCommand extends Command
         $io->section('Productos Disponibles');
 
         $productos = $this->em->getRepository(Productos::class)->findAll();
+
+        if (empty($productos)) {
+            $io->warning('No hay productos registrados.');
+            return;
+        }
+
         $filas = [];
         foreach ($productos as $p) {
             $filas[] = [$p->getId(), $p->getNombre(), '$' . $p->getPrecio(), $p->getDescripcion()];
         }
         $io->table(['ID', 'Nombre', 'Precio', 'Descripcion'], $filas);
+    }
+
+    private function agregarProducto(SymfonyStyle $io): void
+    {
+        $io->section('Agregar Producto');
+
+        $nombre      = $io->ask('Nombre del producto');
+        $precio      = $io->ask('Precio del producto');
+        $descripcion = $io->ask('Descripcion del producto');
+
+        // Validaciones básicas
+        if (!$nombre || !$precio || !$descripcion) {
+            $io->error('Todos los campos son obligatorios.');
+            return;
+        }
+
+        if (!is_numeric($precio) || $precio <= 0) {
+            $io->error('El precio debe ser un número mayor a 0.');
+            return;
+        }
+
+        // Confirmar antes de guardar
+        $confirmar = $io->confirm("¿Confirmas agregar el producto '$nombre' por \$$precio?", true);
+        if (!$confirmar) {
+            $io->warning('Operacion cancelada.');
+            return;
+        }
+
+        $producto = new Productos();
+        $producto->setNombre($nombre);
+        $producto->setPrecio($precio);
+        $producto->setDescripcion($descripcion);
+
+        $this->em->persist($producto);
+        $this->em->flush();
+
+        $io->success("Producto '$nombre' agregado exitosamente!");
     }
 }

@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Entity\Productos;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -42,8 +43,8 @@ class EditarProductoCommand extends Command
 
         $producto = $this->em->getRepository(Productos::class)->find($id);
 
-        if (!producto) {
-            $io->error('No se encontró ningún producto con ese ID $id.');
+        if (!$producto) {
+            $io->error("No se encontró ningún producto con ese ID $id.");
             return Command::FAILURE;
         }
 
@@ -51,7 +52,7 @@ class EditarProductoCommand extends Command
         $precio = $io->ask('Precio del producto', $producto->getPrecio());
         $descripcion = $io->ask('Descripción del producto', $producto->getDescripcion());
 
-        if(!nombre || !$precio || !$descripcion){
+        if (!$nombre || !$precio || !$descripcion) {
             $io->error('Todos los campos son obligatorios.');
             return Command::FAILURE;
         }

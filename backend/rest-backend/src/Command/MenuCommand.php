@@ -104,7 +104,8 @@ class MenuCommand extends Command
             $io->title('MENU PRINCIPAL');
             $io->writeln('[1] Ver Productos');
             $io->writeln('[2] Agregar Producto');
-            $io->writeln('[3] Salir');
+            $io->writeln('[3] Editar Producto');
+            $io->writeln('[4] Salir');
             $io->writeln('');
             $opcion = $io->ask('Selecciona una Opcion');
 
@@ -112,6 +113,8 @@ class MenuCommand extends Command
                 $this->verProductos($io);
             } elseif ($opcion === '2') {
                 $this->agregarProducto($io);
+            } elseif ($opcion === '3') {
+                $this->editarProducto($io);
             } else {
                 $io->success('Hasta Luego!');
                 return;
@@ -134,7 +137,7 @@ class MenuCommand extends Command
         foreach ($productos as $p) {
             $filas[] = [$p->getId(), $p->getNombre(), '$' . $p->getPrecio(), $p->getDescripcion()];
         }
-        $io->table(['ID', 'Nombre', 'Precio', 'Descripcion'], $filas);
+        $io->table(['ID','Nombre', 'Precio', 'Descripcion'], $filas);
     }
 
     private function agregarProducto(SymfonyStyle $io): void
@@ -145,7 +148,6 @@ class MenuCommand extends Command
         $precio      = $io->ask('Precio del producto');
         $descripcion = $io->ask('Descripcion del producto');
 
-        // Validaciones básicas
         if (!$nombre || !$precio || !$descripcion) {
             $io->error('Todos los campos son obligatorios.');
             return;
@@ -156,7 +158,6 @@ class MenuCommand extends Command
             return;
         }
 
-        // Confirmar antes de guardar
         $confirmar = $io->confirm("¿Confirmas agregar el producto '$nombre' por \$$precio?", true);
         if (!$confirmar) {
             $io->warning('Operacion cancelada.');
@@ -172,5 +173,70 @@ class MenuCommand extends Command
         $this->em->flush();
 
         $io->success("Producto '$nombre' agregado exitosamente!");
+    }
+
+    private function editarProducto(SymfonyStyle $io): void
+    {
+        $io->section('Editar Producto');
+
+        // Mostrar productos disponibles
+        $productos = $this->em->getRepository(Productos::class)->findAll();
+
+        if (empty($productos)) {
+            $io->warning('No hay productos registrados.');
+            return;
+        }
+
+        $filas = [];
+        foreach ($productos as $p) {
+            $filas[] = [$p->getId(), $p->getNombre(), '$' . $p->getPrecio(), $p->getDescripcion()];
+        }
+        $io->table(['ID', 'Nombre', 'Precio', 'Descripcion'], $filas);
+
+        // Pedir ID del producto a editar
+        $id = $io->ask('Ingresa el ID del producto a editar');
+
+        $producto = $this->em->getRepository(Productos::class)->find($id);
+
+        if (!$producto) {
+            $io->error("No se encontró ningún producto con ID $id.");
+            return;
+        }
+
+        // Mostrar valores actuales y pedir nuevos
+        // Si el usuario no escribe nada, se conserva el valor actual
+        $nombre = $io->ask(
+            "Nombre del producto",
+            $producto->getNombre()
+        );
+
+        $precio = $io->ask(
+            "Precio del producto",
+            $producto->getPrecio()
+        );
+
+        $descripcion = $io->ask(
+            "Descripcion del producto",
+            $producto->getDescripcion()
+        );
+
+        if (!is_numeric($precio) || $precio <= 0) {
+            $io->error('El precio debe ser un número mayor a 0.');
+            return;
+        }
+
+        $confirmar = $io->confirm("¿Confirmas editar el producto '$nombre' por \$$precio?", true);
+        if (!$confirmar) {
+            $io->warning('Operacion cancelada.');
+            return;
+        }
+
+        $producto->setNombre($nombre);
+        $producto->setPrecio($precio);
+        $producto->setDescripcion($descripcion);
+
+        $this->em->flush();
+
+        $io->success("Producto '$nombre' editado exitosamente!");
     }
 }
